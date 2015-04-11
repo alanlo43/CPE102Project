@@ -1,0 +1,227 @@
+Class: WorldView
+Methods:
+	draw_background
+	draw_entities
+	draw_viewport
+	update_view_tiles
+	update_tile
+	get_tile_image
+	create_mouse_surface
+	update_mouse_cursor
+	mouse_move
+
+Class: WorldModel
+Methods:
+	within_bounds
+	is_occupied
+	find_nearest
+	add_entity
+	move_entity
+	remove_entity
+	remove_entity_at
+	schedule_action
+	unschedule_action
+	update_on_time
+	get_background_image
+	get_background
+	set_background
+	get_tile_occupant
+	get_entities
+	save_world
+	save_entities
+	save_background
+
+Class: Point
+Methods:
+	viewport_to_world
+	world_to_viewport
+	distance_sq
+
+Class: OrderedList
+Methods:
+	insert
+	remove
+	head
+	pop
+
+Class: ListItem
+Methods:
+	__eq__
+
+Class: Grid
+Methods:
+	set_cell
+	get_cell
+
+Class: Background
+Methods:
+	get_images
+	get_image
+	get_name
+
+Class: MinerNotFull
+Methods:
+	set_position
+	get_position
+	get_images
+	get_image
+	get_rate
+	set_resource_count
+	get_resource_count
+	get_resource_limit
+	get_name
+	get_animation_rate
+	remove_pending_action
+	add_pending_action
+	get_pending_actions
+	clear_pending_actions
+	next_image
+
+Class: MinerFull
+Methods:
+	set_position
+	get_position
+	get_images
+	get_image
+	get_rate
+	set_resource_count
+	get_resource_count
+	get_resource_limit
+	get_name
+	get_animation_rate
+	remove_pending_action
+	add_pending_action
+	get_pending_actions
+	clear_pending_actions
+	next_image
+
+Class: Vein
+Methods:
+	set_position
+	get_position
+	get_images
+	get_image
+	get_rate
+	get_resource_distance
+	get_name
+	remove_pending_action
+	add_pending_action
+	get_pending_actions
+	clear_pending_actions
+	next_image
+
+Class: Ore
+Methods:
+	set_position
+	get_position
+	get_images
+	get_image
+	get_rate
+	get_name
+	remove_pending_action
+	add_pending_action
+	get_pending_actions
+	clear_pending_actions
+	next_image
+
+Class: Blacksmith
+Methods:
+	set_position
+	get_position
+	get_images
+	get_image
+	get_rate
+	set_resource_count
+	get_resource_count
+	get_resource_limit
+	get_name
+	get_animation_rate
+	remove_pending_action
+	add_pending_action
+	get_pending_actions
+	clear_pending_actions
+	next_image
+
+Class: Obstacle
+Methods:
+	set_position
+	get_position
+	get_images
+	get_image
+	get_name
+	next_image	
+
+Class: Oreblob
+Methods:
+	set_position
+	get_position
+	get_images
+	get_image
+	get_rate
+	get_name
+	get_animation_rate
+	remove_pending_action
+	add_pending_action
+	get_pending_actions
+	clear_pending_actions
+	next_image
+
+Class: Quake
+Methods:
+	set_position
+	get_position
+	get_images
+	get_image
+	get_name
+	get_animation_rate
+	remove_pending_action
+	add_pending_action
+	get_pending_actions
+	clear_pending_actions
+	next_image
+
+
+
+
+Not Methods:
+	clamp: no applicable objects
+	create_shifted_viewport: no applicable objects
+	nearest_entity: no applicable objects
+	load_world: requires variables located in save_load.py as well as a different add_entity function
+	add_background: same reason as load_world
+	add_entity: different add_entity function as the one under WorldModel, where it should belong
+	create_from_properties: requires variables in save_load.py
+	create_miner: same as above, also keeps program more organized keeping all create_"" functions in save_load.py
+	create_vein: same as above
+	create_ore: same as above
+	create_blacksmith: same as above
+	create_obstacle: same as above
+	create_default_background: part of main.py
+	load_world: part of main.py
+	main: main function
+	create_default_image: no applicable objects
+	load_images: no applicable objects
+	process_image_line: no applicable objects
+	get_images_internal: no applicable objects
+	get_images: no applicable objects
+	entity_string: adding to all entity is exccessive codes, also extremely complicated
+	on_keydown: no applicable objects
+	mouse_to_tile: no applicable objects
+	handle_timer_event: no applicable objects
+	handle_mouse_motion: keep along with other responses in controller.py due to relavance
+	handle_keydown: keep along with other responses in controller.py due to relavance
+	activity_loop: uses all other functions in controller.py
+	create_default_background: no applicable objects
+	mouse_to_tile: no applicable objects
+	save_world: save/load function
+	load_world: save/load function
+	on_keydown: no applicable objects
+	handle_mouse_motion: keep with other handle_ functions
+	handle_keydown: same as above
+	handle_mouse_button: same as above
+	create_new_entity: no applicable objects
+	is_background_tile: requires variables in builder_controller.py
+	activity_loop: no applicable objects
+	
+
+	Almost all functions in actions.py is kept due to relavance and organization
