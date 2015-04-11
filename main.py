@@ -28,7 +28,7 @@ def create_default_background(img):
 
 def load_world(world, i_store, filename):
    with open(filename, 'r') as file:
-      save_load.load_world(world, i_store, file, RUN_AFTER_LOAD)
+     save_load.load_world(world, i_store, file, RUN_AFTER_LOAD)
 
 
 def main():
@@ -50,7 +50,7 @@ def main():
 
    load_world(world, i_store, WORLD_FILE)
 
-   worldview.update_view(view)
+   view.update_view()
 
    controller.activity_loop(view, world)
 
