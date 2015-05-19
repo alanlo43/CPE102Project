@@ -14,10 +14,10 @@ public class WorldModel {
    int VEIN_RATE_MIN = 8000;
    int VEIN_RATE_MAX = 17000;
    
-   public Object background;
+   public Grid background;
    public int num_rows;
    public int num_cols;
-   public Object occupancy;
+   public Grid occupancy;
    public Entity[] entities;
    public Object action_queue;
    
@@ -53,7 +53,7 @@ public class WorldModel {
       return nearest_entity(oftype);
    }
    
-   public add_entity(Entity entity)
+   public void add_entity(Entity entity)
    {
       Point pt = entity.get_position();
       if (this.within_bounds(pt))
@@ -91,7 +91,7 @@ public class WorldModel {
          Point point = Point(-1,-1);
          entity.set_position(point);
          this.entities.remove(entity);
-         this.occupancy.set_cell(point, null);         
+         this.occupancy.set_cell(point, 0);         
       }
       
    }
@@ -104,7 +104,7 @@ public class WorldModel {
       }
    }
    
-   public Background get_background(Point point)
+   public int get_background(Point point)
    {
       if (this.within_bounds(point))
       {
