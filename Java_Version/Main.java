@@ -1,209 +1,280 @@
-import java.util.List;
-import java.util.ArrayList;
 import processing.core.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.List;
+import java.util.Scanner;
+import java.io.FileNotFoundException;
+import java.io.File;
 
 public class Main extends PApplet
 {
-   private List<PImage> miner;
-   private int current_image;
-   private int current_image_win;
+   private static final int WORLD_WIDTH_SCALE = 2;
+   private static final int WORLD_HEIGHT_SCALE = 2;
+
+   private static final int SCREEN_WIDTH = 640;
+   private static final int SCREEN_HEIGHT = 480;
+   private static final int TILE_WIDTH = 32;
+   private static final int TILE_HEIGHT = 32;
+
+   private static final int TIMER_ACTION_DELAY = 100;
+
+   private static final String IMAGE_LIST_FILE_NAME = "imagelist";
+   private static final String DEFAULT_IMAGE_NAME = "background_default";
+   private static final int DEFAULT_IMAGE_COLOR = 0x808080;
+
+   private static final String SAVE_FILE_NAME = "gaia.sav";
+
+   private ImageStore imageStore;
    private long next_time;
-   private Point eyeLocation;
-   private int[][] world;  
-   private List<PImage> blob;
-   private PImage bgnd;
-   private PImage vein;
-   private PImage rock;
-   private PImage ore;
-   private PImage obstacle;
-   private PImage blacksmith;
-   private final int row = 15;
-   private final int total_row = 30;
-   private final int col = 20;
-   private final int total_col = 40;
-   private final int BGND_COLOR = color(220,230,245);
-   private static final int ANIMATION_TIME = 100;
+   private WorldModel world;
+   private WorldView view;
+
 
    public void setup()
    {
-      size(640,480);
-      background(BGND_COLOR);
-      miner = new ArrayList<PImage>();
-      miner.add(loadImage("miner1.bmp"));
-      miner.add(loadImage("miner2.bmp"));
-      miner.add(loadImage("miner3.bmp"));
-      miner.add(loadImage("miner4.bmp"));
-      miner.add(loadImage("miner5.bmp"));
-      bgnd = loadImage("grass.bmp");
-      vein = loadImage("vein.bmp");
-      rock = loadImage("rock.bmp");
-      ore = loadImage("ore.bmp");
-      obstacle = loadImage("obstacle.bmp");
-      blacksmith = loadImage("blacksmith.bmp");
-      blob = new ArrayList<PImage>();
-      blob.add(loadImage("blob1.bmp"));
-      blob.add(loadImage("blob2.bmp"));
-      blob.add(loadImage("blob3.bmp"));
-      blob.add(loadImage("blob4.bmp"));
-      blob.add(loadImage("blob5.bmp"));
-      blob.add(loadImage("blob6.bmp"));
-      blob.add(loadImage("blob7.bmp"));
-      blob.add(loadImage("blob8.bmp"));
-      blob.add(loadImage("blob9.bmp"));
-      blob.add(loadImage("blob10.bmp"));
-      blob.add(loadImage("blob11.bmp"));
-      blob.add(loadImage("blob12.bmp"));                  
-      this.eyeLocation = new Point(0,0);      
-      world= new int[total_col][total_row];
-      world[2][3] = 2;
-      world[3][2] = 2;
-      world[4][1] = 2;
-      world[4][2] = 2;
-      world[4][3] = 2;
-      world[4][4] = 2;
-      world[4][5] = 2;
-      world[2][6] = 2;
-      world[3][6] = 2;
-      world[4][6] = 2;
-      world[5][6] = 2;
-      world[6][6] = 2;
-      world[9][1] = 2;
-      world[10][1] = 2;
-      world[8][2] = 2;      
-      world[8][3] = 2;
-      world[8][4] = 2;
-      world[8][5] = 2;
-      world[9][6] = 2;
-      world[10][6] = 2;
-      world[11][2] = 2;      
-      world[11][3] = 2;
-      world[11][4] = 2;
-      world[11][5] = 2;
-      world[13][2] = 2;
-      world[14][1] = 2;
-      world[15][1] = 2;
-      world[16][2] = 2;
-      world[16][3] = 2;
-      world[15][4] = 2;
-      world[14][5] = 2;
-      world[13][6] = 2;
-      world[14][6] = 2;
-      world[15][6] = 2;
-      world[16][6] = 2;
-      world[4][5] = 2;
-      world[4][13] = 1;
-      world[5][13] = 2;
-      world[6][13] = 3;
-      world[10][21] = 6;
-      world[29][13] = 6;
-      world[7][13] = 4;
-      world[8][13] = 5;
-      world[35][28] = 4;
-      world[30][24] = 5;
-      world[19][14] = 5;
-      world[39][14] = 5;
-      world[19][29] = 5;
-      world[39][29] = 5;
-      world[9][13] = 6;
-      world[19][21] = 7;
-      world[10][16] = 7;
-      current_image = 0;
-      next_time = System.currentTimeMillis() + ANIMATION_TIME;
-  }
+      size(SCREEN_WIDTH, SCREEN_HEIGHT);
+      imageStore = new ImageStore(
+         createImageColored(TILE_WIDTH, TILE_HEIGHT, DEFAULT_IMAGE_COLOR));
+      loadImages(IMAGE_LIST_FILE_NAME, imageStore, this);
 
-   private void next_image()
-   {
-      current_image = (current_image + 1) % miner.size();
+      int num_cols = SCREEN_WIDTH / TILE_WIDTH * WORLD_WIDTH_SCALE;
+      int num_rows = SCREEN_HEIGHT / TILE_HEIGHT * WORLD_HEIGHT_SCALE;
+
+      // create default background
+      Background background = createDefaultBackground(imageStore);
+
+      // create world model
+      world = new WorldModel(num_rows, num_cols, background);
+
+      // load world
+      Map<String, PropertyParser> parsers = buildPropertyParsers(world,
+         imageStore, System.currentTimeMillis());
+      loadWorld(world, SAVE_FILE_NAME, imageStore, parsers);
+
+      // create world view
+      view = new WorldView(SCREEN_WIDTH / TILE_WIDTH,
+         SCREEN_HEIGHT / TILE_HEIGHT, this, world, TILE_WIDTH, TILE_HEIGHT);
+
+      // update view?
+
+      next_time = System.currentTimeMillis() + TIMER_ACTION_DELAY;
    }
 
    public void draw()
    {
-      // A simplified action scheduling handler
       long time = System.currentTimeMillis();
       if (time >= next_time)
       {
-         next_image();
-         next_time = time + ANIMATION_TIME;
+         world.updateOnTime(time);
+         next_time = time + TIMER_ACTION_DELAY;
       }
 
-      background(BGND_COLOR);
-      int i,j;      
-      
-      for (i= eyeLocation.getX(); i< eyeLocation.getX() + col ; i++)
-      {
-         for (j= eyeLocation.getY(); j< eyeLocation.getY() + row; j++)
-         {
-            if (world[i][j] == 0)
-            {
-               image(bgnd ,(i - eyeLocation.getX())* 32, (j-eyeLocation.getY())  *32);
-            }
-            if (world[i][j] == 1) 
-            {
-               image(vein, (i - eyeLocation.getX()) * 32, (j-eyeLocation.getY()) * 32);
-            }
-            if (world[i][j] == 2) 
-            {
-               image(rock, (i - eyeLocation.getX()) * 32, (j-eyeLocation.getY()) * 32);
-            }
-            if (world[i][j] == 3) 
-            {
-               image(ore, (i - eyeLocation.getX()) * 32, (j-eyeLocation.getY()) * 32);
-            }
-            if (world[i][j] == 4) 
-            {
-               image(obstacle, (i - eyeLocation.getX()) * 32, (j-eyeLocation.getY()) * 32);
-            }
-            if (world[i][j] == 5) 
-            {
-               image(blacksmith, (i - eyeLocation.getX()) * 32, (j-eyeLocation.getY()) * 32);
-            }
-            if (world[i][j] == 6) 
-            {
-               image(miner.get(current_image), (i - eyeLocation.getX()) * 32, (j-eyeLocation.getY()) * 32);
-            }
-            if (world[i][j] == 7) 
-            {
-               image(blob.get(current_image), (i - eyeLocation.getX()) * 32, (j-eyeLocation.getY()) * 32);
-            }
-         }
-      }
-      
+      view.drawViewport();
    }
 
    public void keyPressed()
    {
-      switch (key)
+      if (key == CODED)
       {
-         case 'a':
-            if (eyeLocation.getX() > 0)
-            {
-               eyeLocation.setX(eyeLocation.getX() - 1);
-            }
-            break;
-
-         case 'd':
-            if (eyeLocation.getX() < 20)
-            {              
-               eyeLocation.setX(eyeLocation.getX() + 1);
-            }
-            break;
-                        
-         case 'w':
-            if (eyeLocation.getY() > 0)
-            {
-               eyeLocation.setY(eyeLocation.getY() - 1);
-            }
-            break;
-         case 's':
-            if (eyeLocation.getY() < 15)
-            {
-               eyeLocation.setY(eyeLocation.getY() + 1);
-            }
-            break;
-         case 'q':
-            eyeLocation.setY(0);
-            eyeLocation.setX(0);            
+         int dx = 0;
+         int dy = 0;
+         switch (keyCode)
+         {
+            case UP:
+               dy = -1;
+               break;
+            case DOWN:
+               dy = 1;
+               break;
+            case LEFT:
+               dx = -1;
+               break;
+            case RIGHT:
+               dx = 1;
+               break;
+         }
+         view.updateView(dx, dy);
       }
+   }
+
+   private static Background createDefaultBackground(ImageStore imageStore)
+   {
+      List<PImage> bgndImgs = imageStore.get(DEFAULT_IMAGE_NAME);
+      return new Background(DEFAULT_IMAGE_NAME, bgndImgs);
+   }
+
+   private static PImage createImageColored(int width, int height, int color)
+   {
+      PImage img = new PImage(TILE_WIDTH, TILE_HEIGHT, RGB);
+      img.loadPixels();
+      for (int i = 0; i < img.pixels.length; i++)
+      {
+         img.pixels[i] = color;
+      }
+      img.updatePixels();
+      return img;
+   }
+
+
+   private static void loadImages(String filename, ImageStore imageStore,
+      PApplet screen)
+   {
+      try
+      {
+         Scanner in = new Scanner(new File(filename));
+         ImageStore.loadImages(in, imageStore, TILE_WIDTH,
+               TILE_HEIGHT, screen);
+      }
+      catch (FileNotFoundException e)
+      {
+         System.err.println(e.getMessage());
+      }
+   }
+
+   private static void loadWorld(WorldModel world, String filename,
+      ImageStore imageStore, Map<String, PropertyParser> parsers)
+   {
+      try
+      {
+         Scanner in = new Scanner(new File(filename));
+         WorldLoad.load(in, world, imageStore, parsers);
+      }
+      catch (FileNotFoundException e)
+      {
+         System.err.println(e.getMessage());
+      }
+   }
+
+   private static final String BGND_KEY = "background";
+   private static final int BGND_NUM_PROPERTIES = 4;
+   private static final int BGND_NAME = 1;
+   private static final int BGND_COL = 2;
+   private static final int BGND_ROW = 3;
+
+   private static final String MINER_KEY = "miner";
+   private static final int MINER_NUM_PROPERTIES = 7;
+   private static final int MINER_NAME = 1;
+   private static final int MINER_LIMIT = 4;
+   private static final int MINER_COL = 2;
+   private static final int MINER_ROW = 3;
+   private static final int MINER_RATE = 5;
+   private static final int MINER_ANIMATION_RATE = 6;
+
+   private static final String OBSTACLE_KEY = "obstacle";
+   private static final int OBSTACLE_NUM_PROPERTIES = 4;
+   private static final int OBSTACLE_NAME = 1;
+   private static final int OBSTACLE_COL = 2;
+   private static final int OBSTACLE_ROW = 3;
+
+   private static final String ORE_KEY = "ore";
+   private static final int ORE_NUM_PROPERTIES = 5;
+   private static final int ORE_NAME = 1;
+   private static final int ORE_COL = 2;
+   private static final int ORE_ROW = 3;
+   private static final int ORE_RATE = 4;
+
+   private static final String SMITH_KEY = "blacksmith";
+   private static final int SMITH_NUM_PROPERTIES = 4;
+   private static final int SMITH_NAME = 1;
+   private static final int SMITH_COL = 2;
+   private static final int SMITH_ROW = 3;
+
+   private static final String VEIN_KEY = "vein";
+   private static final int VEIN_NUM_PROPERTIES = 6;
+   private static final int VEIN_NAME = 1;
+   private static final int VEIN_RATE = 4;
+   private static final int VEIN_COL = 2;
+   private static final int VEIN_ROW = 3;
+   private static final int VEIN_REACH = 5;
+
+   private static Map<String, PropertyParser> buildPropertyParsers(
+      WorldModel world, ImageStore imageStore, long time)
+   {
+      Map<String, PropertyParser> parsers = new HashMap<>();
+
+      parsers.put(BGND_KEY, properties -> {
+            if (properties.length >= BGND_NUM_PROPERTIES)
+            {
+               Point pt = new Point(Integer.parseInt(properties[BGND_COL]),
+                  Integer.parseInt(properties[BGND_ROW]));
+               String name = properties[BGND_NAME];
+               world.setBackground(pt, new Background(name,
+                  imageStore.get(name)));
+            }
+         });
+
+      parsers.put(MINER_KEY, properties -> {
+            if (properties.length == MINER_NUM_PROPERTIES)
+            {
+               Point pt = new Point(Integer.parseInt(properties[MINER_COL]),
+                  Integer.parseInt(properties[MINER_ROW]));
+               Actor entity = new MinerNotFull(properties[MINER_NAME],
+                  pt,
+                  Integer.parseInt(properties[MINER_RATE]),
+                  Integer.parseInt(properties[MINER_ANIMATION_RATE]),
+                  Integer.parseInt(properties[MINER_LIMIT]),
+                  imageStore.get(MINER_KEY));
+               world.addEntity(entity);
+               entity.schedule(world, time + entity.getRate(), imageStore);
+            }
+         });
+
+      parsers.put(OBSTACLE_KEY, properties -> {
+            if (properties.length == OBSTACLE_NUM_PROPERTIES)
+            {
+               Point pt = new Point(
+                  Integer.parseInt(properties[OBSTACLE_COL]),
+                  Integer.parseInt(properties[OBSTACLE_ROW]));
+               WorldEntity entity = new Obstacle(properties[OBSTACLE_NAME],
+                  pt,
+                  imageStore.get(OBSTACLE_KEY));
+               world.addEntity(entity);
+            }
+         });
+
+      parsers.put(ORE_KEY, properties -> {
+            if (properties.length == ORE_NUM_PROPERTIES)
+            {
+               Point pt = new Point(Integer.parseInt(properties[ORE_COL]),
+                  Integer.parseInt(properties[ORE_ROW]));
+               Actor entity = new Ore(properties[ORE_NAME],
+                  pt,
+                  Integer.parseInt(properties[ORE_RATE]),
+                  imageStore.get(ORE_KEY));
+               world.addEntity(entity);
+               entity.schedule(world, time + entity.getRate(), imageStore);
+            }
+         });
+
+      parsers.put(SMITH_KEY, properties -> {
+            if (properties.length >= SMITH_NUM_PROPERTIES)
+            {
+               Point pt = new Point(Integer.parseInt(properties[SMITH_COL]),
+                  Integer.parseInt(properties[SMITH_ROW]));
+               WorldEntity entity = new Blacksmith(properties[SMITH_NAME],
+                  pt,
+                  imageStore.get(SMITH_KEY));
+               world.addEntity(entity);
+            }
+         });
+
+      parsers.put(VEIN_KEY, properties -> {
+            if (properties.length == VEIN_NUM_PROPERTIES)
+            {
+               Point pt = new Point(Integer.parseInt(properties[VEIN_COL]),
+                  Integer.parseInt(properties[VEIN_ROW]));
+               Actor entity = new Vein(properties[VEIN_NAME],
+                  pt,
+                  Integer.parseInt(properties[VEIN_RATE]),
+                  Integer.parseInt(properties[VEIN_REACH]),
+                  imageStore.get(VEIN_KEY));
+               world.addEntity(entity);
+               entity.schedule(world, time + entity.getRate(), imageStore);
+            }
+         });
+
+      return parsers;
    }
 
    public static void main(String[] args)

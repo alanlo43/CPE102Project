@@ -1,0 +1,2 @@
+By clicking anywhere on the screen, it will spawn a moon with the location of the mouseclick being the top left corner.
+When the moon is triggered, four different Link entities will spawn at each corner of the moon, then each of the link will travel towards the closest obstacle and transform into a LinkInvert, then head back to the moon.
